@@ -1,0 +1,46 @@
+document.getElementById('taskForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const taskInput = document.getElementById('taskInput');
+    const taskTime = document.getElementById('taskTime');
+    const taskText = taskInput.value.trim();
+    const taskDate = taskTime.value;
+
+    if (taskText !== '' && taskDate !== '') {
+        addTaskToList(taskText, taskDate);
+        taskInput.value = '';
+        taskTime.value = '';
+    }
+});
+
+function addTaskToList(taskText, taskDate) {
+    const taskList = document.getElementById('taskList');
+    const li = document.createElement('li');
+
+    const taskDetails = document.createElement('div');
+    taskDetails.className = 'task-details';
+    taskDetails.innerHTML = `<strong>${taskText}</strong><br><small>${new Date(taskDate).toLocaleString()}</small>`;
+    
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'حذف';
+    deleteButton.className = 'delete-btn';
+    deleteButton.onclick = function() {
+        taskList.removeChild(li);
+    };
+
+    const editButton = document.createElement('button');
+    editButton.textContent = 'تعديل';
+    editButton.className = 'edit-btn';
+    editButton.onclick = function() {
+        const newText = prompt('عدل المهمة:', taskText);
+        const newDate = prompt('عدل التاريخ:', taskDate);
+        if (newText && newDate) {
+            taskDetails.innerHTML = `<strong>${newText}</strong><br><small>${new Date(newDate).toLocaleString()}</small>`;
+        }
+    };
+
+    li.appendChild(taskDetails);
+    li.appendChild(editButton);
+    li.appendChild(deleteButton);
+    taskList.appendChild(li);
+}
