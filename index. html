@@ -1,46 +1,137 @@
-document.getElementById('taskForm').addEventListener('submit', function(event) {
-    event.preventDefault();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Help Portal</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        /* CSS STYLES */
+        /* باقي الأكواد موجودة في النسخة التي أرسلتها سابقًا */
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Student Help Portal</h1>
+        <p>Your go-to platform for assignments and resources</p>
+    </header>
 
-    const taskInput = document.getElementById('taskInput');
-    const taskTime = document.getElementById('taskTime');
-    const taskText = taskInput.value.trim();
-    const taskDate = taskTime.value;
+    <div id="login-section">
+        <h2>Login</h2>
+        <form id="login-form">
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
 
-    if (taskText !== '' && taskDate !== '') {
-        addTaskToList(taskText, taskDate);
-        taskInput.value = '';
-        taskTime.value = '';
-    }
-});
+    <div id="welcome-message">
+        <h2>Welcome!</h2>
+        <p>You are now logged in as <span id="user-role"></span>.</p>
+    </div>
 
-function addTaskToList(taskText, taskDate) {
-    const taskList = document.getElementById('taskList');
-    const li = document.createElement('li');
+    <main style="display: none;" id="main-content">
+        <section id="tasks">
+            <h2>Current Tasks</h2>
+            <ul id="task-list">
+                <!-- Tasks will be populated here dynamically -->
+            </ul>
+        </section>
 
-    const taskDetails = document.createElement('div');
-    taskDetails.className = 'task-details';
-    taskDetails.innerHTML = `<strong>${taskText}</strong><br><small>${new Date(taskDate).toLocaleString()}</small>`;
-    
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'حذف';
-    deleteButton.className = 'delete-btn';
-    deleteButton.onclick = function() {
-        taskList.removeChild(li);
-    };
+        <section id="add-task">
+            <h2>Add a New Task</h2>
+            <form id="task-form">
+                <label for="task-name">Task Name:</label>
+                <input type="text" id="task-name" placeholder="Enter task name" required>
+                <button type="submit">Add Task</button>
+            </form>
+        </section>
+    </main>
 
-    const editButton = document.createElement('button');
-    editButton.textContent = 'تعديل';
-    editButton.className = 'edit-btn';
-    editButton.onclick = function() {
-        const newText = prompt('عدل المهمة:', taskText);
-        const newDate = prompt('عدل التاريخ:', taskDate);
-        if (newText && newDate) {
-            taskDetails.innerHTML = `<strong>${newText}</strong><br><small>${new Date(newDate).toLocaleString()}</small>`;
+    <footer>
+        <p>&copy; 2024 Student Help Portal. All rights reserved.</p>
+    </footer>
+
+    <script>
+        import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const database = getDatabase();
+
+        const users = [
+            { username: 'admin', password: 'ghanighanizoro', role: 'admin' },
+            { username: 'student', password: 'abcd', role: 'user' }
+        ];
+
+        const loginForm = document.getElementById('login-form');
+        const loginSection = document.getElementById('login-section');
+        const mainContent = document.getElementById('main-content');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const userRoleSpan = document.getElementById('user-role');
+        const taskForm = document.getElementById('task-form');
+        const taskList = document.getElementById('task-list');
+
+        let currentUserRole = null;
+
+        loginForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const user = users.find(
+                user => user.username === username && user.password === password
+            );
+
+            if (user) {
+                currentUserRole = user.role;
+                userRoleSpan.textContent = user.role === 'admin' ? 'Admin' : 'User';
+
+                loginSection.style.display = 'none';
+                welcomeMessage.style.display = 'block';
+                mainContent.style.display = 'block';
+
+                if (currentUserRole !== 'admin') {
+                    document.getElementById('add-task').style.display = 'none';
+                }
+
+                loadTasks();
+            } else {
+                alert('Invalid credentials');
+            }
+        });
+
+        taskForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const taskName = document.getElementById('task-name').value;
+
+            if (!taskName) return alert('Please enter a task name.');
+
+            const tasksRef = ref(database, 'tasks');
+            const newTaskRef = push(tasksRef);
+            set(newTaskRef, { name: taskName });
+
+            alert('Task added successfully!');
+            loadTasks();
+        });
+
+        function loadTasks() {
+            const tasksRef = ref(database, 'tasks');
+            onValue(tasksRef, (snapshot) => {
+                taskList.innerHTML = '';
+                const tasks = snapshot.val();
+
+                if (tasks) {
+                    Object.keys(tasks).forEach(key => {
+                        const li = document.createElement('li');
+                        li.textContent = tasks[key].name;
+                        taskList.appendChild(li);
+                    });
+                }
+            });
         }
-    };
-
-    li.appendChild(taskDetails);
-    li.appendChild(editButton);
-    li.appendChild(deleteButton);
-    taskList.appendChild(li);
-}
+    </script>
+</body>
+</html>
